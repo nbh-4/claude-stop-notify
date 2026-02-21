@@ -14,7 +14,7 @@ if ($hookData.stop_hook_active -eq $true) { exit 0 }
 
 # ── 설정 로드 ──
 $configPath = Join-Path $PSScriptRoot 'config.json'
-$cfg = @{ sound = 'C:\Windows\Media\Windows Notify Calendar.wav'; appName = 'Claude Code'; toastDuration = 'long'; maxSummaryLength = 2000; title = '🦀 Clawd' }
+$cfg = @{ sound = 'C:\Windows\Media\Windows Notify Calendar.wav'; appName = 'Claude Code'; toastDuration = 'long'; maxSummaryLength = 2000; title = '🦀 Clawd'; lang = 'ko' }
 if (Test-Path $configPath) {
     try {
         $userCfg = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -22,10 +22,24 @@ if (Test-Path $configPath) {
     } catch {}
 }
 
+# ── 언어 팩 ──
+$L = @{}
+if ($cfg.lang -eq 'en') {
+    $L.defaultSummary = 'Task completed!'
+    $L.edit = 'Edit'; $L.write = 'Write'; $L.bash = 'Bash'; $L.read = 'Read'; $L.search = 'Search'
+    $L.req = 'req'
+    $L.fmtHM = '{0}h {1}m'; $L.fmtMS = '{0}m {1}s'; $L.fmtM = '{0}m'; $L.fmtS = '{0}s'
+} else {
+    $L.defaultSummary = '작업이 완료되었습니다!'
+    $L.edit = '수정'; $L.write = '생성'; $L.bash = '명령'; $L.read = '읽기'; $L.search = '검색'
+    $L.req = '요청'
+    $L.fmtHM = '{0}시간 {1}분'; $L.fmtMS = '{0}분 {1}초'; $L.fmtM = '{0}분'; $L.fmtS = '{0}초'
+}
+
 $project = Split-Path -Leaf $hookData.cwd
 
 # ── 대화 기록 분석 ──
-$summary = "작업이 완료되었습니다!"
+$summary = $L.defaultSummary
 $stats = ""
 $tokenInfo = ""
 $timeInfo = ""
@@ -44,11 +58,11 @@ try {
         $searchCount = ([regex]::Matches($allText, '"name"\s*:\s*"(Grep|Glob|WebSearch)"')).Count
 
         $sp = @()
-        if ($editCount -gt 0) { $sp += "수정 $editCount" }
-        if ($writeCount -gt 0) { $sp += "생성 $writeCount" }
-        if ($bashCount -gt 0) { $sp += "명령 $bashCount" }
-        if ($readCount -gt 0) { $sp += "읽기 $readCount" }
-        if ($searchCount -gt 0) { $sp += "검색 $searchCount" }
+        if ($editCount -gt 0) { $sp += "$($L.edit) $editCount" }
+        if ($writeCount -gt 0) { $sp += "$($L.write) $writeCount" }
+        if ($bashCount -gt 0) { $sp += "$($L.bash) $bashCount" }
+        if ($readCount -gt 0) { $sp += "$($L.read) $readCount" }
+        if ($searchCount -gt 0) { $sp += "$($L.search) $searchCount" }
         if ($sp.Count -gt 0) { $stats = $sp -join " | " }
 
         # 토큰 (마지막 응답만)
@@ -82,15 +96,15 @@ try {
             } catch {}
         }
         function FmtDur($d) {
-            if ($d.TotalHours -ge 1) { "$([math]::Floor($d.TotalHours))시간 $($d.Minutes)분" }
-            elseif ($d.TotalMinutes -ge 1) { if ($d.Seconds -gt 0) { "$([math]::Floor($d.TotalMinutes))분 $($d.Seconds)초" } else { "$([math]::Floor($d.TotalMinutes))분" } }
-            else { "$([math]::Floor($d.TotalSeconds))초" }
+            if ($d.TotalHours -ge 1) { $L.fmtHM -f [math]::Floor($d.TotalHours), $d.Minutes }
+            elseif ($d.TotalMinutes -ge 1) { if ($d.Seconds -gt 0) { $L.fmtMS -f [math]::Floor($d.TotalMinutes), $d.Seconds } else { $L.fmtM -f [math]::Floor($d.TotalMinutes) } }
+            else { $L.fmtS -f [math]::Floor($d.TotalSeconds) }
         }
         if ($firstTs -and $lastTs) {
             $totalStr = FmtDur ($lastTs - $firstTs)
             if ($lastHumanTs -and $lastTs -gt $lastHumanTs) {
                 $reqStr = FmtDur ($lastTs - $lastHumanTs)
-                $timeInfo = "$totalStr (요청 $reqStr)"
+                $timeInfo = "$totalStr ($($L.req) $reqStr)"
             } else {
                 $timeInfo = $totalStr
             }

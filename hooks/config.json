@@ -3,5 +3,6 @@
   "appName": "Claude Code",
   "toastDuration": "long",
   "maxSummaryLength": 2000,
-  "title": "🦀 Clawd"
+  "title": "🦀 Clawd",
+  "lang": "ko"
 }
