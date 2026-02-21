@@ -1,0 +1,16 @@
+{
+  "description": "Show Windows toast notification with conversation summary on Stop",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${CLAUDE_PLUGIN_ROOT}/hooks/stop-notify.ps1'",
+            "timeout": 13
+          }
+        ]
+      }
+    ]
+  }
+}

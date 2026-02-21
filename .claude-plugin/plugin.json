@@ -1,0 +1,8 @@
+{
+  "name": "claude-stop-notify",
+  "version": "1.0.0",
+  "description": "Windows toast notification with session summary when Claude Code stops",
+  "author": {
+    "name": "hyo37"
+  }
+}
